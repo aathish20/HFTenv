@@ -1,0 +1,27 @@
+spec_version: 1
+name: hftenv
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+tasks:
+  - id: easy
+    difficulty: easy
+    grader:
+      type: python
+      entrypoint: graders.py:grade_easy
+  - id: medium
+    difficulty: medium
+    grader:
+      type: python
+      entrypoint: graders.py:grade_medium
+  - id: hard
+    difficulty: hard
+    grader:
+      type: python
+      entrypoint: graders.py:grade_hard
+  - id: very_hard
+    difficulty: very_hard
+    grader:
+      type: python
+      entrypoint: graders.py:grade_very_hard
