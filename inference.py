@@ -34,8 +34,9 @@ load_dotenv(override=False)
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 API_KEY = os.getenv("HF_TOKEN", "")
-TASK_NAME = os.getenv("HFT_TASK_NAME", "easy")
+TASK_NAME = os.getenv("HFT_TASK_NAME", "all")
 BENCHMARK = os.getenv("HFT_BENCHMARK", "hftenv")
+DEFAULT_TASKS = ["easy", "medium", "hard", "very_hard"]
 
 JSON_RE = re.compile(r"\{[\s\S]*\}")
 
@@ -183,7 +184,12 @@ def main() -> None:
     if not API_KEY:
         raise RuntimeError("Missing HF_TOKEN.")
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-    _ = run_task(client, TASK_NAME)
+    task_name = TASK_NAME.strip().lower()
+    if task_name in {"all", ""}:
+        for t in DEFAULT_TASKS:
+            _ = run_task(client, t)
+    else:
+        _ = run_task(client, task_name)
 
 
 if __name__ == "__main__":
