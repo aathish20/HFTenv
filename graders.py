@@ -9,8 +9,16 @@ from __future__ import annotations
 from typing import Any, Callable, Dict, Mapping
 
 
+EPSILON_SCORE = 1e-6
+
+
 def _clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return max(lo, min(hi, x))
+
+
+def _clamp_open_unit_interval(x: float) -> float:
+    """Clamp score to strict open interval (0, 1) for evaluator compliance."""
+    return _clamp(x, EPSILON_SCORE, 1.0 - EPSILON_SCORE)
 
 
 def _safe_ratio(numerator: float, denominator: float) -> float:
@@ -113,7 +121,8 @@ def _grade_episode_internal(
     weighted_sum = 0.0
     for key, weight in weights.items():
         weighted_sum += float(components.get(key, 0.0)) * float(weight)
-    score = _clamp(weighted_sum, 0.0, 1.0)
+    # Keep final score strictly within (0, 1), never exactly 0.0 or 1.0.
+    score = _clamp_open_unit_interval(weighted_sum)
 
     return {
         "task_id": task_id,
