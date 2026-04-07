@@ -9,7 +9,8 @@ from __future__ import annotations
 from typing import Any, Callable, Dict, Mapping
 
 
-EPSILON_SCORE = 1e-6
+MIN_VALID_SCORE = 0.002
+MAX_VALID_SCORE = 0.998
 
 
 def _clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -17,8 +18,8 @@ def _clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
 
 
 def _clamp_open_unit_interval(x: float) -> float:
-    """Clamp score to strict open interval (0, 1) for evaluator compliance."""
-    return _clamp(x, EPSILON_SCORE, 1.0 - EPSILON_SCORE)
+    """Clamp score to a strict evaluator-safe open interval."""
+    return _clamp(x, MIN_VALID_SCORE, MAX_VALID_SCORE)
 
 
 def _safe_ratio(numerator: float, denominator: float) -> float:
