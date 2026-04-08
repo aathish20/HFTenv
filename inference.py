@@ -133,7 +133,6 @@ def _request_action_text(client: Any, obs_prompt: str, last_reward: float) -> st
         {"max_tokens": 180},
     ]
 
-    last_exc: Exception | None = None
     for extra in attempts:
         try:
             completion = client.chat.completions.create(
@@ -142,11 +141,10 @@ def _request_action_text(client: Any, obs_prompt: str, last_reward: float) -> st
                 **extra,
             )
             return completion.choices[0].message.content or "{}"
-        except Exception as exc:
-            last_exc = exc
+        except Exception:
             continue
 
-    raise RuntimeError(f"Model request failed after retries: {last_exc}")
+    return "{}"
 
 
 def run_task(client: Any, task_id: str) -> float:
@@ -166,15 +164,24 @@ def run_task(client: Any, task_id: str) -> float:
             if obs.done:
                 break
 
-            assistant_text = _request_action_text(client, obs.prompt, last_reward)
-            action = _parse_action(assistant_text)
+            error_msg = None
+            try:
+                assistant_text = _request_action_text(client, obs.prompt, last_reward)
+                action = _parse_action(assistant_text)
+                obs = env.step(action)
+            except Exception as exc:
+                assistant_text = "{}"
+                action = _parse_action(assistant_text)
+                try:
+                    obs = env.step(action)
+                except Exception:
+                    break
+                error_msg = str(exc)
 
-            obs = env.step(action)
             reward = float(obs.reward or 0.0)
             rewards.append(reward)
             last_reward = reward
             steps_taken = step
-            error_msg = None
             if isinstance(obs.info, dict):
                 err = obs.info.get("last_action_error")
                 if err:
