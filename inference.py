@@ -37,6 +37,8 @@ API_KEY = os.getenv("HF_TOKEN", "")
 TASK_NAME = os.getenv("HFT_TASK_NAME", "all")
 BENCHMARK = os.getenv("HFT_BENCHMARK", "hftenv")
 DEFAULT_TASKS = ["easy", "medium", "hard", "very_hard"]
+MIN_VALID_SCORE = 0.002
+MAX_VALID_SCORE = 0.998
 
 JSON_RE = re.compile(r"\{[\s\S]*\}")
 
@@ -85,6 +87,10 @@ def _parse_action(text: str) -> HFTAction:
         )
     except Exception:
         return default
+
+
+def _clamp_open_unit_interval(x: float) -> float:
+    return max(MIN_VALID_SCORE, min(MAX_VALID_SCORE, float(x)))
 
 
 def log_start(*, task: str, env: str, model: str) -> None:
@@ -154,7 +160,7 @@ def run_task(client: Any, task_id: str) -> float:
     rewards: list[float] = []
     last_reward = 0.0
     steps_taken = 0
-    score = 0.0
+    score = MIN_VALID_SCORE
     success = False
 
     log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
@@ -198,8 +204,8 @@ def run_task(client: Any, task_id: str) -> float:
             if obs.done:
                 break
 
-        score = float((obs.info or {}).get("final_score", 0.0))
-        score = max(0.0, min(1.0, score))
+        score = float((obs.info or {}).get("final_score", MIN_VALID_SCORE))
+        score = _clamp_open_unit_interval(score)
         success = score >= 0.6
     finally:
         if hasattr(env, "close"):
