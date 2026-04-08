@@ -105,7 +105,7 @@ Each episode returns:
 - `profit_progress_score`
 
 Score validity:
-- final task score is clamped to strict evaluator-safe bounds `[0.002, 0.998]`
+- final task score is clamped to strict evaluator-safe bounds `[0,1]`
 
 Grader components:
 - `profit_progress`
