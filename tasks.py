@@ -5,10 +5,10 @@ Each task defines a market scenario with different risk profiles,
 target profits, and opportunity generation parameters.
 
 Tasks:
-  easy       — Stable market, mostly low-risk
-  medium     — Volatile market, balanced risk
-  hard       — Adversarial market, high-risk traps
-  very_hard  — Stealth trap, safe early → deadly late
+  easy       ? Stable market, mostly low-risk
+  medium     ? Volatile market, balanced risk
+  hard       ? Adversarial market, high-risk traps
+  very_hard  ? Stealth trap, safe early ? deadly late
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ class TaskConfig:
     target_profit: float
     base_seed: int
     loss_multiplier: float = 1.0
-    risk_value_correlation: float = 0.0  # 0=independent, 1=high-value→high-risk
+    risk_value_correlation: float = 0.0  # 0=independent, 1=high-value?high-risk
     # Per-step overrides: step -> weights
     value_weights: Dict[int, List[float]] = field(default_factory=dict)
     risk_weights: Dict[int, List[float]] = field(default_factory=dict)
@@ -96,7 +96,7 @@ def generate_opportunities(
 ) -> List[Dict[str, Any]]:
     """Generate deterministic opportunities for a given step.
 
-    seed = task.base_seed + step  →  same seed produces same opportunities.
+    seed = task.base_seed + step  ?  same seed produces same opportunities.
     """
     seed = task.base_seed + step
     rng = random.Random(seed)
@@ -105,7 +105,7 @@ def generate_opportunities(
     rw = task.risk_weights.get(step, task.default_risk_weights)
     lw = task.latency_weights.get(step, task.default_latency_weights)
 
-    # Risk-value correlation: on harder tasks, high value → high risk
+    # Risk-value correlation: on harder tasks, high value ? high risk
     correlation = task.risk_correlation_overrides.get(
         step, task.risk_value_correlation
     )

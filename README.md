@@ -1,4 +1,4 @@
-﻿---
+---
 title: HFTEnv
 colorFrom: blue
 colorTo: green

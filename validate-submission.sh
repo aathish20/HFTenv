@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# validate-submission.sh — OpenEnv Submission Validator
+# validate-submission.sh ? OpenEnv Submission Validator
 #
 # Checks that your HF Space is live, Docker image builds, and openenv validate passes.
 #
@@ -50,7 +50,7 @@ run_with_timeout() {
     ( sleep "$secs" && kill "$pid" 2>/dev/null ) &
     local watcher=$!
     wait "$pid" 2>/dev/null
-    local rc=$?
+    local rc=$'
     kill "$watcher" 2>/dev/null
     wait "$watcher" 2>/dev/null
     return $rc

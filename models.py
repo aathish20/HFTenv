@@ -23,17 +23,17 @@ class HFTOpportunity(BaseModel):
 
 
 class HFTAction(Action):
-        """Action issued by the agent each step.
+    """Action issued by the agent each step.
 
-        Controls three variables:
-            - security_level: float in [0, 1]
-            - active_nodes: int in [1, 10]
-            - selected_indices: list[int] of opportunity indices to execute
-        """
+    Controls three variables:
+        - security_level: float in [0, 1]
+        - active_nodes: int in [1, 10]
+        - selected_indices: list[int] of opportunity indices to execute
+    """
 
-        security_level: float
-        active_nodes: int
-        selected_indices: List[int] = Field(default_factory=list)
+    security_level: float
+    active_nodes: int
+    selected_indices: List[int] = Field(default_factory=list)
 
 
 class HFTObservation(Observation):

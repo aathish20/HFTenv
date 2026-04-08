@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "openenv-hftenv"
 version = "0.1.0"
-description = "HFT Security Environment for OpenEnv — high-frequency trading simulation"
+description = "HFT Security Environment for OpenEnv ? high-frequency trading simulation"
 requires-python = ">=3.10"
 dependencies = [
     "openenv-core[core]>=0.2.1",
