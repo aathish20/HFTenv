@@ -219,7 +219,7 @@ TASK_MEDIUM = TaskConfig(
         "trades. Goal: balance speed vs safety."
     ),
     # Target tuned to require near-full episode to reach.
-    target_profit=30000.0,
+    target_profit=36000.0,
     base_seed=137,
     loss_multiplier=1.5,
     risk_value_correlation=0.3,
@@ -300,7 +300,7 @@ TASK_VERY_HARD = TaskConfig(
         "to punish greedy selection. Goal: avoid greedy selection."
     ),
     # Target tuned to require near-full episode to reach.
-    target_profit=80000.0,
+    target_profit=50000.0,
     base_seed=512,
     loss_multiplier=2.5,
     risk_value_correlation=0.0,

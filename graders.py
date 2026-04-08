@@ -31,33 +31,46 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
 def _task_weights(task_id: str) -> Dict[str, float]:
     if task_id == "easy":
         return {
-            "profit_progress": 0.75,
+            "profit_progress": 0.80,
             "loss_control": 0.15,
-            "ops_continuity": 0.10,
+            "ops_continuity": 0.05,
         }
     if task_id == "medium":
         return {
-            "profit_progress": 0.60,
+            "profit_progress": 0.75,
             "loss_control": 0.15,
-            "stability": 0.15,
-            "ops_continuity": 0.10,
+            "stability": 0.07,
+            "ops_continuity": 0.03,
         }
     if task_id == "hard":
         return {
-            "profit_progress": 0.50,
+            "profit_progress": 0.75,
             "loss_control": 0.15,
-            "resilience": 0.20,
-            "stability": 0.10,
-            "ops_continuity": 0.05,
+            "resilience": 0.06,
+            "stability": 0.02,
+            "ops_continuity": 0.02,
         }
     # very_hard (and fallback)
     return {
-        "profit_progress": 0.45,
-        "loss_control": 0.15,
-        "resilience": 0.20,
-        "stability": 0.15,
-        "ops_continuity": 0.05,
+        "profit_progress": 0.80,
+        "loss_control": 0.12,
+        "resilience": 0.04,
+        "stability": 0.025,
+        "ops_continuity": 0.015,
     }
+
+
+def _progress_gate(task_id: str, profit_progress: float) -> float:
+    """Task-dependent gate that forces score to follow profit progression."""
+    p = _clamp(profit_progress, 0.0, 1.0)
+    if task_id == "easy":
+        return 0.50 + 0.50 * p
+    if task_id == "medium":
+        return 0.30 + 0.70 * p
+    if task_id == "hard":
+        return p
+    # very_hard (and fallback): strictest gating
+    return p
 
 
 def _component_scores(
@@ -122,8 +135,9 @@ def _grade_episode_internal(
     weighted_sum = 0.0
     for key, weight in weights.items():
         weighted_sum += float(components.get(key, 0.0)) * float(weight)
+    gated_score = weighted_sum * _progress_gate(task_id, components["profit_progress"])
     # Keep final score strictly within (0, 1), never exactly 0.0 or 1.0.
-    score = _clamp_open_unit_interval(weighted_sum)
+    score = _clamp_open_unit_interval(gated_score)
 
     return {
         "task_id": task_id,
