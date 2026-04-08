@@ -10,16 +10,6 @@ from uuid import uuid4
 from openenv.core.env_server.interfaces import Environment
 
 try:
-    from hftenv.graders import grade_episode, list_graded_tasks
-    from hftenv.models import HFTAction, HFTObservation, HFTOpportunity, HFTState
-    from hftenv.tasks import (
-        LATENCY_PENALTY_MAP,
-        TaskConfig,
-        generate_opportunities,
-        get_task,
-    )
-    from hftenv.rewards import RewardProvider, build_reward_providers
-except ImportError:
     from graders import grade_episode, list_graded_tasks  # type: ignore[no-redef]
     from models import HFTAction, HFTObservation, HFTOpportunity, HFTState  # type: ignore[no-redef]
     from tasks import (  # type: ignore[no-redef]
@@ -29,8 +19,18 @@ except ImportError:
         get_task,
     )
     from rewards import RewardProvider, build_reward_providers  # type: ignore[no-redef]
+except ImportError:
+    from hftenv.graders import grade_episode, list_graded_tasks
+    from hftenv.models import HFTAction, HFTObservation, HFTOpportunity, HFTState
+    from hftenv.tasks import (
+        LATENCY_PENALTY_MAP,
+        TaskConfig,
+        generate_opportunities,
+        get_task,
+    )
+    from hftenv.rewards import RewardProvider, build_reward_providers
 
-# ── Constants ────────────────────────────────────────────────────────────────
+# Constants
 # TOTAL_STEPS is task-dependent (see TaskConfig.max_steps). Keep a default for metadata.
 TOTAL_STEPS = 10
 TOTAL_NODES = 10
@@ -135,7 +135,7 @@ class HFTSecurityEnvironment(Environment):
         if not isinstance(action, HFTAction):
             raise TypeError(f"Expected HFTAction, received {type(action)!r}")
 
-        # ── Clamp action values ──────────────────────────────────────────
+        # Clamp action values
         security_level = max(0.0, min(1.0, action.security_level))
         # active_nodes must be 1..10 in the new spec
         active_nodes = max(1, min(TOTAL_NODES, action.active_nodes))
@@ -173,13 +173,13 @@ class HFTSecurityEnvironment(Environment):
             )
         )
 
-        # ── 1) Generate Opportunities (per tick) ─────────────────────────
+        # 1) Generate Opportunities (per tick)
         # Always regenerate opportunities each step for a realistic market tick.
         self._current_opportunities = generate_opportunities(
             self._task, step=current_step, count=AVAILABLE_OPPORTUNITIES
         )
 
-        # ── Latency model (fixed): latency is computed per-step, not accumulated ──
+        # Latency model (fixed): latency is computed per-step, not accumulated
         # Smooth latency scaling with security (avoid overly steep linear penalty).
         # Other factors only affect latency within the current step (e.g., active attack).
         latency_ms = BASE_LATENCY_MS + 12.0 * (security_level ** 1.35)
@@ -197,7 +197,7 @@ class HFTSecurityEnvironment(Environment):
             latency_attack_spike_left = max(0.0, latency_attack_spike_left - 10.0)
             latency_attack_steps_left -= 1
 
-        # ── 2) Security-based filtering (soft) ───────────────────────────
+        # 2) Security-based filtering (soft)
         # Security does NOT remove opportunities from the observation.
         # Instead, it determines which indices are considered "allowed" to execute.
         # Higher security => stricter anomaly threshold.
@@ -210,7 +210,7 @@ class HFTSecurityEnvironment(Environment):
         }
         filtered_out = int(AVAILABLE_OPPORTUNITIES - len(allowed_indices))
 
-        # ── 3) Apply Cyber Attacks (persistent + escalates over time) ────
+        # 3) Apply Cyber Attacks (persistent + escalates over time)
         # Attack escalation over time (task-scaled)
         progress = (current_step + 1) / max(1.0, float(max_steps))
         base_attack = float(getattr(self._task, "attack_base_prob", 0.10))
@@ -321,7 +321,7 @@ class HFTSecurityEnvironment(Environment):
                 if compromised_steps_left[i] <= 0:
                     self._state.node_compromised[i] = False
 
-        # ── SELECT OPPORTUNITIES (by indices) ───────────────────────────
+        # SELECT OPPORTUNITIES (by indices)
         # Agent provides indices into the *current* opportunity list.
         # We enforce bounds, uniqueness, and security-based filtering.
         seen: set[int] = set()
@@ -375,7 +375,7 @@ class HFTSecurityEnvironment(Environment):
             selected = slip_selected
             selected_indices = slip_selected_indices
 
-        # ── 4) Node Failure Logic (improved) ─────────────────────────────
+        # 4) Node Failure Logic (improved)
         # Node health degrades over time; compromised nodes are less reliable.
         working_nodes = 0
         failed_nodes = 0
@@ -419,7 +419,7 @@ class HFTSecurityEnvironment(Environment):
 
         missed_trades = max(0, len(selected) - executed_trades)
 
-        # ── 6) Profit Calculation ───────────────────────────────────────
+        # 6) Profit Calculation
         base_profit = float(sum(float(opp["value"]) for opp in selected)) if selected else 0.0
 
         # latency impact (reduced per spec)
@@ -447,7 +447,7 @@ class HFTSecurityEnvironment(Environment):
             trade_profit *= 0.85
             profit += trade_profit
 
-        # ── 7) Loss Conditions ─────────────────────────────────────────-
+        # 7) Loss Conditions
         malicious_loss = 0.0
         malicious_executed = 0
         security_score_penalty = 0.0
@@ -463,13 +463,13 @@ class HFTSecurityEnvironment(Environment):
 
         missed_trade_loss = 0.03 * float(sum(float(opp["value"]) for opp in selected[executed_trades:])) if missed_trades > 0 else 0.0
 
-        # ── COST MODEL (security cost increases significantly at high security) ──
+        # COST MODEL (security cost increases significantly at high security)
         node_cost = active_nodes * 5.0
         security_cost = 15.0 * (security_level ** 2)
         # Remove trust_cost (selection itself is free; security already costs)
         total_cost = node_cost + security_cost
 
-        # ── 8) Update System State ─────────────────────────────────────-
+        # 8) Update System State
         # Stress dynamics: stress can build from bad outcomes, but can also recover
         # when the agent invests in security.
         trade_volume = executed_trades / max(1.0, float(AVAILABLE_OPPORTUNITIES))
@@ -610,12 +610,12 @@ class HFTSecurityEnvironment(Environment):
             episode_stats.get("total_latency_attack_steps", 0)
         ) + int(1 if (latency_attack_triggered or latency_attack_steps_left > 0) else 0)
 
-        # ── TERMINATION ──────────────────────────────────────────────────
+        # TERMINATION
         # Always run the full episode length. The environment dynamics (attacks,
         # node health/compromise, stress) evolve over time and must be experienced.
         done = self._state.step_count >= max_steps
 
-        # ── Build observation ─────────────────────────────────────────────
+        # Build observation
         obs = self._build_observation(
             step_profit=step_profit,
             step_loss=step_loss,
@@ -626,7 +626,7 @@ class HFTSecurityEnvironment(Environment):
         )
         obs.done = done
 
-        # ── Reward Function (step-level partial reward) ───────────────────
+        # Reward Function (step-level partial reward)
         # Training reward must reflect *this step's* decision quality.
         # Keep diminishing returns once the agent is beyond the target.
         net_profit = float(self._state.cumulative_profit - self._state.cumulative_loss)
@@ -875,7 +875,7 @@ class HFTSecurityEnvironment(Environment):
         session_end_str = "21:00"
 
         lines = [
-            "=== HFT Security Environment — Intraday Session ===",
+            "=== HFT Security Environment - Intraday Session ===",
             f"Task: {self._task.description}",
             "",
             "System Status:",

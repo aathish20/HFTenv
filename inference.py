@@ -111,6 +111,44 @@ def log_end(*, success: bool, steps: int, score: float, rewards: list[float]) ->
     )
 
 
+def _request_action_text(client: Any, obs_prompt: str, last_reward: float) -> str:
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                f"Previous step reward: {last_reward:+.4f}\n"
+                "Environment snapshot:\n"
+                f"{obs_prompt}\n\n"
+                "Output strict JSON only. "
+                "Choose a balanced action that avoids both over-filtering and under-security."
+            ),
+        },
+    ]
+
+    attempts = [
+        {"temperature": 0.0, "max_tokens": 180},
+        {"temperature": 0.0, "max_completion_tokens": 180},
+        {"max_completion_tokens": 180},
+        {"max_tokens": 180},
+    ]
+
+    last_exc: Exception | None = None
+    for extra in attempts:
+        try:
+            completion = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=messages,
+                **extra,
+            )
+            return completion.choices[0].message.content or "{}"
+        except Exception as exc:
+            last_exc = exc
+            continue
+
+    raise RuntimeError(f"Model request failed after retries: {last_exc}")
+
+
 def run_task(client: Any, task_id: str) -> float:
     env = HFTSecurityEnvironment(task_id=task_id)
     obs = env.reset()
@@ -128,25 +166,7 @@ def run_task(client: Any, task_id: str) -> float:
             if obs.done:
                 break
 
-            completion = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Previous step reward: {last_reward:+.4f}\n"
-                            "Environment snapshot:\n"
-                            f"{obs.prompt}\n\n"
-                            "Output strict JSON only. "
-                            "Choose a balanced action that avoids both over-filtering and under-security."
-                        ),
-                    },
-                ],
-                temperature=0.0,
-                max_tokens=180,
-            )
-            assistant_text = completion.choices[0].message.content or "{}"
+            assistant_text = _request_action_text(client, obs.prompt, last_reward)
             action = _parse_action(assistant_text)
 
             obs = env.step(action)

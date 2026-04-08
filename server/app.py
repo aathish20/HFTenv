@@ -9,13 +9,13 @@ import os
 from openenv.core.env_server.http_server import create_app
 
 try:
-    from hftenv.models import HFTAction, HFTObservation
-    from hftenv.server.environment import HFTSecurityEnvironment
-    from hftenv.server.gradio_ui import build_hft_gradio_app
-except ImportError:
     from models import HFTAction, HFTObservation  # type: ignore[no-redef]
     from .environment import HFTSecurityEnvironment
     from .gradio_ui import build_hft_gradio_app
+except ImportError:
+    from hftenv.models import HFTAction, HFTObservation  # type: ignore[no-redef]
+    from hftenv.server.environment import HFTSecurityEnvironment  # type: ignore[no-redef]
+    from hftenv.server.gradio_ui import build_hft_gradio_app  # type: ignore[no-redef]
 
 
 task_id = os.getenv("HFT_TASK_ID", "easy")
