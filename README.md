@@ -15,7 +15,7 @@ The agent must make step-wise control decisions to maximize net profit while mai
 
 ## Motivation
 
-This is a real-world style operations-control task, not a toy game:
+This is a real-world style operations-control task, in a pressured environment:
 - trade execution under latency pressure
 - security filtering vs throughput tradeoff
 - compromised/failing infrastructure nodes
