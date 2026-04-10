@@ -55,8 +55,7 @@ Important behavior:
 - execution is further capped by working node capacity
 - attacks can alter latency, compromise nodes, inject fake opportunities
 
-Detailed walkthrough is documented in:
-- [`ENV_WORKING_EXPLAINED.md`](./ENV_WORKING_EXPLAINED.md)
+
 
 ## Observation Space
 
